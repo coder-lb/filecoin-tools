@@ -120,19 +120,20 @@ function prepare()
     echo "  Ubuntu Server 18.04"
     echo "  RHEL/CentOS 7.6"
     echo "  StorSwift OS 2.1"
-    echo "If you run other Linux distributions, you NEED to solve some additional problems."
+    echo "If you run other Linux distributions, you NEED to solve additional problems."
     echo
     sleep 2
 
     # Install necessary packages
     Get_Dist_Name
-    sudo ${PM} -y install jq
-    sudo ${PM} -y install curl
     
     if [[ "${DISTRO}" = "CentOS" || "${DISTRO}" = "RHEL" || "${DISTRO}" = "StorSwiftOS" ]]; then
+        sudo yum -y install epel-release
         if [ ! -f "${GLIBC_218_FILE}" ]; then
             # For CentOS 7.x, RHEL 7.x, StorSwift OS 2.x
             # glibc needs to be upgraded to 2.18
+            sudo yum -y install make gcc
+            pushd .
             curl -O http://ftp.gnu.org/gnu/glibc/glibc-2.18.tar.gz
             tar zxf glibc-2.18.tar.gz
             cd glibc-2.18/
@@ -140,10 +141,14 @@ function prepare()
             cd build/
             ../configure --prefix=/usr --disable-profile --enable-add-ons --with-headers=/usr/include \
                 --with-binutils=/usr/bin
-            make -V=0 -j4 # TODO: How about CPU with less cores?
+            make -j4 # TODO: How about CPU with less cores?
             sudo make install
+            popd
         fi
     fi
+    
+    sudo ${PM} -y install jq
+    sudo ${PM} -y install curl
 }
 
 if [ $# -lt 1 ]; then
