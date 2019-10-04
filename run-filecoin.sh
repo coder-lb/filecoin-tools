@@ -80,6 +80,16 @@ function show_error()
     exit 1
 }
 
+# Run it in the background in order to make sure that the user only types one password
+SUDO_FLAG="/tmp/sudo_klajslkjdfasdfl"
+function sudo_checker()
+{
+    while [ -f ${SUDO_FLAG} ]; do
+        sudo -v
+        sleep 10
+    done &
+}
+
 # From lnmp1.2-full/include/main.sh
 function Get_Dist_Name()
 {
@@ -158,6 +168,12 @@ else
     NICKNAME=$1
     echo "Use NODENAME ${NICKNAME}."
 fi
+
+touch ${SUDO_FLAG}
+#trap 'rm -f ${SUDO_FLAG} 1>/dev/null 2>&1' 0
+trap 'rm -f ${SUDO_FLAG} 1>/dev/null 2>&1;exit 1' SIGHUP SIGINT SIGQUIT SIGTERM
+sudo -v
+sudo_checker
 
 cat  ${HOMEDIR}/.bashrc | grep "alias filecoin"
 if [ $? -ne 0 ]; then
@@ -263,8 +279,17 @@ if [ ${RUN_FLAG} -le 1 ]; then
         || show_error "Can't init repo"
         
     sleep 10
+    
+    CONFLICTED_PORT=`netstat -anp | grep LISTEN | grep 6000`
+    if [[ -n "${CONFLICTED_PORT}" ]]; then
+        # Replace SWARM port if there are any conflicts.
+        # For example, X server may use Port 6000.
+        sed -i 's/\/ip4\/0.0.0.0\/tcp\/6000/\/ip4\/0.0.0.0\/tcp\/6001/g' ${FILECOIN_REPO}/config.json \
+            || "Can't change API port in ${FILECOIN_REPO}/config.json!"
+    fi
 
     if [ "${HEARTBEAT}" = "1" ]; then
+        # Is it better to directly replace strings in config?
         go-filecoin --repodir=${FILECOIN_REPO} daemon &
         sleep 10
         go-filecoin --repodir=${FILECOIN_REPO} config heartbeat.nickname ${NICKNAME}
@@ -273,6 +298,7 @@ if [ ${RUN_FLAG} -le 1 ]; then
         kill ${PREV_PID}
         sleep 10
     fi
+
 fi
 
 PREV_PID=`ps -ef | grep "go-filecoin --repodir=${FILECOIN_REPO}" |grep -v grep | awk '{print $2}'`
@@ -388,3 +414,5 @@ if [ ${RUN_FLAG} -le 4 ]; then
     echo "****************************************************************************************"
     echo
 fi
+
+rm -f ${SUDO_FLAG}
