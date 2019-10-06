@@ -15,6 +15,7 @@ FILECOIN_VERSION=0.5.6
 ASK_PRICE=0.0000000000001
 ASK_BLOCK=28800
 MINER_CREATE_FIL=100
+ALT_SWARM_PORT=6008 # If the default swarm port 6000 is used, then use this prot.
 ################################################################################
 
 BINDIR=/usr/bin
@@ -170,7 +171,7 @@ else
 fi
 
 touch ${SUDO_FLAG}
-#trap 'rm -f ${SUDO_FLAG} 1>/dev/null 2>&1' 0
+trap 'rm -f ${SUDO_FLAG} 1>/dev/null 2>&1' 0
 trap 'rm -f ${SUDO_FLAG} 1>/dev/null 2>&1;exit 1' SIGHUP SIGINT SIGQUIT SIGTERM
 sudo -v
 sudo_checker
@@ -256,6 +257,8 @@ if [ ! -x ${FILECOIN_BINDIR}/go-filecoin ]; then
 fi
 sudo ln -sf ${FILECOIN_BINDIR}/go-filecoin ${BINDIR}/go-filecoin
 
+rm -f ${SUDO_FLAG}
+
 if [ ! -d ${PROOF_PARAMETERS} ]; then
     mkdir -p ${PROOF_PARAMETERS}
     if [ ! -x ${FILECOIN_BINDIR}/paramcache ]; then
@@ -284,7 +287,7 @@ if [ ${RUN_FLAG} -le 1 ]; then
     if [[ -n "${CONFLICTED_PORT}" ]]; then
         # Replace SWARM port if there are any conflicts.
         # For example, X server may use Port 6000.
-        sed -i 's/\/ip4\/0.0.0.0\/tcp\/6000/\/ip4\/0.0.0.0\/tcp\/6001/g' ${FILECOIN_REPO}/config.json \
+        sed -i "s/\/ip4\/0.0.0.0\/tcp\/6000/\/ip4\/0.0.0.0\/tcp\/${ALT_SWARM_PORT}/g" ${FILECOIN_REPO}/config.json \
             || "Can't change API port in ${FILECOIN_REPO}/config.json!"
     fi
 
@@ -414,5 +417,3 @@ if [ ${RUN_FLAG} -le 4 ]; then
     echo "****************************************************************************************"
     echo
 fi
-
-rm -f ${SUDO_FLAG}
