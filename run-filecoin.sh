@@ -11,9 +11,9 @@ TOOLNAME=$0
 ################################################################################
 ### NOTICE
 ### YOU PBOBABLY NEED TO CHANGE THESE OPTIONS!!!
-FILECOIN_VERSION=0.5.6
+FILECOIN_VERSION=0.5.7
 ASK_PRICE=0.0000000000001
-ASK_BLOCK=28800
+ASK_BLOCK=288000
 MINER_CREATE_FIL=100
 ALT_SWARM_PORT=6008 # If the default swarm port 6000 is used, then use this prot.
 ################################################################################
@@ -22,7 +22,7 @@ BINDIR=/usr/bin
 WORKDIR=/mnt/filecoin
 #FILECOIN_REPO=~/.filecoin
 FILECOIN_REPO=${WORKDIR}/devnet/repo
-FILECOIN_BINDIR=${WORKDIR}/filecoin
+FILECOIN_BINDIR=${WORKDIR}/filecoin-${FILECOIN_VERSION}
 PROOF_PARAMETERS=/var/tmp/filecoin-proof-parameters
 
 
@@ -63,6 +63,7 @@ function download_filecoin()
     FILECOIN_TAR=`basename ${OFFICIAL_BINARY}`
     wget -t3 -c ${OFFICIAL_BINARY} || show_error "Filecoin can't be downloaded from the official site!" 
     tar zxf ${FILECOIN_TAR} || show_error "The downloadeded file is corrupt!"
+	mv filecoin ${FILECOIN_BINDIR} || show_error "Can't rename directory to ${FILECOIN_BINDIR}!"
     
     chmod +x ${FILECOIN_BINDIR}/go-filecoin
     chmod +x ${FILECOIN_BINDIR}/paramcache
@@ -199,7 +200,6 @@ if [ "${LOGDIR}" = "" ]; then
     LOGDIR=${WORKDIR}/log
 fi
 mkdir -p ${LOGDIR}
-mkdir -p ${FILECOIN_BINDIR}
 mkdir -p ${WORKDIR}/devnet
 
 RUN_FLAG=0
@@ -255,6 +255,7 @@ prepare
 if [ ! -x ${FILECOIN_BINDIR}/go-filecoin ]; then
     download_filecoin
 fi
+
 sudo ln -sf ${FILECOIN_BINDIR}/go-filecoin ${BINDIR}/go-filecoin
 
 rm -f ${SUDO_FLAG}
@@ -326,6 +327,9 @@ walletaddr=`go-filecoin --repodir=${FILECOIN_REPO} address ls`
 if [ ${RUN_FLAG} -le 1 ]; then
 
     sleep 30
+    
+    # At first get some FILs.
+    curl -s -X POST -F "target=${walletaddr}" "http://user.kittyhawk.wtf:9797/tap"
 
     echo "Now wait for chain sync. It may takes hours or days..."
     if [ "${CHAIN_SYNC_TO_CURRENT_HEIGHT}" == "0" ]; then
@@ -349,7 +353,9 @@ if [ ${RUN_FLAG} -le 1 ]; then
         done
     fi
     echo "Now get FIL from the faucet!"
-
+    
+    # If we can't get FILs after we apply twice, then quit the script.
+    # We need to get FILs manually via browsers.
     MESSAGE_CID=`curl -s -X POST -F "target=${walletaddr}" "http://user.kittyhawk.wtf:9797/tap" \
         | cut -d" " -f4`
     echo "Now wait for message with CID ${MESSAGE_CID}"
