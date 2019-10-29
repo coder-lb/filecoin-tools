@@ -63,7 +63,7 @@ function download_filecoin()
     FILECOIN_TAR=`basename ${OFFICIAL_BINARY}`
     wget -t3 -c ${OFFICIAL_BINARY} || show_error "Filecoin can't be downloaded from the official site!" 
     tar zxf ${FILECOIN_TAR} || show_error "The downloadeded file is corrupt!"
-	mv filecoin ${FILECOIN_BINDIR} || show_error "Can't rename directory to ${FILECOIN_BINDIR}!"
+    mv filecoin ${FILECOIN_BINDIR} || show_error "Can't rename directory to ${FILECOIN_BINDIR}!"
     
     chmod +x ${FILECOIN_BINDIR}/go-filecoin
     chmod +x ${FILECOIN_BINDIR}/paramcache
@@ -114,6 +114,7 @@ function Get_Dist_Name()
     elif grep -Eqi "Ubuntu" /etc/issue || grep -Eq "Ubuntu" /etc/*-release; then
         DISTRO='Ubuntu'
         PM='apt'
+        sudo apt-get update
     elif grep -Eqi "Raspbian" /etc/issue || grep -Eq "Raspbian" /etc/*-release; then
         DISTRO='Raspbian'
         PM='apt'
