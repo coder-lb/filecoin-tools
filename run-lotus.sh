@@ -9,7 +9,8 @@
 BINDIR=/usr/bin
 LOTUS_BINDIR=/usr/local/bin
 WORKDIR=/mnt/lotus
-#FILECOIN_REPO=~/.lotus
+FILECOIN_REPO=/mnt/lotus/.lotus
+FILECOIN_STORAGE=/mnt/lotus/.lotusstorage
 PROOF_PARAMETERS=/var/tmp/filecoin-proof-parameters
 
 BUILD_LOTUS=0 # Set it to 1 to build lotus manually
@@ -20,7 +21,7 @@ LOTUS_GIT=https://github.com/filecoin-project/lotus.git
 
 LOTUS_FAUCET=https://lotus-faucet.kittyhawk.wtf/send?address=
 
-CURRENT_LOTUS_VERSION=lotus-test-0.0.1
+CURRENT_LOTUS_VERSION=lotus-devnet6
 CURRENT_LOTUS_TAR=${CURRENT_LOTUS_VERSION}.tar.gz
 LOTUS_BINARY_URL=https://storswift.com/download/lotus/${CURRENT_LOTUS_TAR}
 
@@ -126,16 +127,44 @@ fi
 
 cd ${WORKDIR}
 
+
+if [ -d ${FILECOIN_REPO} ]; then
+    while true
+    do
+        read -r -p "Are You Sure to remove previous filecoin repo and recreate the node? [yes/no] " input
+    
+        case ${input} in
+            [yY][eE][sS])
+                echo "You choose 'yes'. Now recreate filecoin node."
+                break
+                ;;
+    
+            [nN][oO])
+                echo "You choose 'no'. Now exit."
+                exit 1
+                ;;
+    
+            *)
+                echo "Please input yes/no."
+                ;;
+        esac
+    done
+    rm -rf ${FILECOIN_REPO}
+    rm -rf ${FILECOIN_STORAGE}
+fi
+
+mkdir -p ${FILECOIN_REPO}
+mkdir -p ${FILECOIN_STORAGE}
+ln -sf ${FILECOIN_REPO} ~/.lotus
+ln -sf ${FILECOIN_STORAGE}  ~/.lotusstorage
+
 if [ "${BUILD_LOTUS}" = "1" ]; then
     build_lotus
 else
-    download_lotus
+    if [ ! -f ${CURRENT_LOTUS_TAR} ]; then
+        download_lotus
+    fi
 fi
-
-mkdir -p /mnt/lotus/.lotus
-mkdir -p /mnt/lotus/.lotusstorage
-ln -s /mnt/lotus/.lotus ~/.lotus
-ln -s /mnt/lotus/.lotusstorage  ~/.lotusstorage
 
 #lotus daemon
 CURRENT_TIME=`date +%Y%m%d%H%M`
