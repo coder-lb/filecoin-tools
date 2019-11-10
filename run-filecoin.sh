@@ -186,13 +186,14 @@ export FILPATH=/mnt/filecoin/devnet/repo
 export FILECOIN_REPO="$FILPATH"
 alias filecoin="go-filecoin --repodir=$FILPATH"
 alias chain='filecoin show block `filecoin chain head|head -n 1`;date'
-alias fil="filecoin wallet balance `filecoin address ls`;date"
-alias miner='filecoin config mining.minerAddress'
+alias fil='filecoin wallet balance `filecoin address ls`;date'
+alias miner='filecoin config mining.minerAddress | tr -d  \"'
 alias power='filecoin miner power `filecoin config mining.minerAddress | tr -d \"`'
 alias completed='filecoin deals list --miner | grep complete | wc -l'
 alias rejected='filecoin deals list --miner | grep rejected | wc -l'
 alias staged='filecoin deals list --miner | grep staged | wc -l'
 alias status='filecoin mining status'
+alias mined='filecoin  chain ls -l | grep `miner` | grep -v empty'
 EOF
 fi
 
