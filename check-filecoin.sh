@@ -10,6 +10,14 @@ BINDIR=/usr/bin
 WORKDIR=/mnt/filecoin
 FILECOIN_REPO=${WORKDIR}/devnet/repo
 LOGDIR=${WORKDIR}/log
+CHKFLAG=/tmp/__check_filecoin_flag__
+
+if [ -f ${CHKFLAG} ]; then
+    exit 1
+fi
+touch ${CHKFLAG}
+trap 'rm -f ${CHKFLAG} 1>/dev/null 2>&1' 0
+trap 'rm -f ${CHKFLAG} 1>/dev/null 2>&1;exit 1' SIGHUP SIGINT SIGQUIT SIGTERM
 
 mkdir -p ${LOGDIR}
 
